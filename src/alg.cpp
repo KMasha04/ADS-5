@@ -1,79 +1,93 @@
 // Copyright 2025 NNTU-CS
 #include <string>
+#include <stack>
+#include <cctype>
 #include <map>
 #include "tstack.h"
 
-std::map<char, int> priority {
-{'(', 0}, {')', 1}, {'-', 2}, {'+', 2}, {'/', 3}, {'*', 3}
-};
-TStack<char, 100> stack1;
-TStack<int, 100> stack2;
+int getPriority(char op) {
+  switch (op) {
+    case '(': return 0;
+    case ')': return 1;
+    case '+': case '-': return 2;
+    case '*': case '/': return 3;
+    default: return -1;
+  }
+}
+
+void top2pstfx(TStack<char, 100>& stack,
+std::string& postfix) {
+  if (!postfix.empty() && postfix.back() != ' ') {
+    postfix += ' ';
+  }
+  postfix += stack.getTop();
+  stack.pop();
+}
+
 std::string infx2pstfx(const std::string& inf) {
-  std::string str = "";
-  for (int i = 0; i < inf.length(); i++) {
-    if (inf[i] >= '0' && inf[i] <= '9') {
-      str += inf[i];
-      str += ' ';
-      } else {
-      if (inf[i] == '(' || stack1.isEmp() == 1 ||
-        priority[inf[i]] > priority[stack1.get()]) {
-        stack1.push(inf[i]);
-        } else if (inf[i] == ')') {
-        while (stack1.get() != '(') {
-          str = str + stack1.pop() + ' ';
-        }
-        if (stack1.get() == '(') {
-          stack1.pop();
-        }
-        } else if (priority[inf[i]] <= priority[stack1.get()]) {
-        char item = stack1.pop();
-        str = str + item + ' ';
-        stack1.push(inf[i]);
+  TStack<char, 100> stack;
+  std::string postfix;
+  bool needSpace = false;
+  for (char ch : inf) {
+    if (isdigit(ch)) {
+      if (needSpace) {
+        postfix += ' ';
+        needSpace = false;
+      }
+      postfix += ch;
+    } else if (ch == '(') {
+      stack.push(ch);
+    } else if (ch == ')') {
+      while (!stack.isEmpty() && stack.getTop() != '(') {
+        top2pstfx(stack, postfix);
+      }
+      if (!stack.isEmpty()) {
+        stack.pop();
+      }
+    } else if (getPriority(ch) > 1) {
+      while (!stack.isEmpty() &&
+        getPriority(stack.getTop()) >= getPriority(ch)) {
+        top2pstfx(stack, postfix);
+      }
+      stack.push(ch);
+      needSpace = true;
+    }
+  }
+  while (!stack.isEmpty()) {
+    top2pstfx(stack, postfix);
+  }
+  return postfix;
+}
+
+int eval(const std::string& postfix) {
+  std::stack<int> stack;
+  std::string token;
+  for (char ch : postfix) {
+    if (ch == ' ') {
+      if (!token.empty()) {
+        stack.push(std::stoi(token));
+        token.clear();
+      }
+      continue;
+    }
+    if (isdigit(ch)) {
+      token += ch;
+    } else {
+      if (!token.empty()) {
+        stack.push(std::stoi(token));
+        token.clear();
+      }
+      int b = stack.top();
+      stack.pop();
+      int a = stack.top();
+      stack.pop();
+      switch (ch) {
+        case '+': stack.push(a + b); break;
+        case '-': stack.push(a - b); break;
+        case '*': stack.push(a * b); break;
+        case '/': stack.push(a / b); break;
       }
     }
   }
-  while (stack1.isEmp() != 1) {
-    str = str + stack1.pop();
-    if (stack1.isEmp() != 1) {
-      str = str + ' ';
-    }
-  }
-  return str;
-}
-
-int eval(const std::string& pref) {
-  std::string sP;
-  char cP;
-  for (char i : pref) {
-    if ((i >= '0' && i <= '9')) {
-      sP += i;
-      } else if (!sP.empty() && i == ' ') {
-      stack2.push(std::stoi(sP));
-      sP.clear();
-      } else {
-       switch (i) {
-         case '+' : {
-           cP = stack2.pop();
-           stack2.push(stack2.pop() + cP);
-           break;
-         }
-           case '*' : {
-             cP = stack2.pop();
-             stack2.push(stack2.pop() * cP);
-             break;
-             }
-             case '/': {
-                cP = stack2.pop();
-               stack2.push(stack2.pop() / cP);
-               break;
-             }
-               case '-' : {
-                 cP = stack2.pop();
-                 stack2.push(stack2.pop() - cP);
-                 break;
-               }
-       }
-    }
-  }
-  return stack2.pop();
+  return stack.top();
 }
