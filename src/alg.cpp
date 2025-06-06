@@ -15,8 +15,7 @@ int getPriority(char op) {
   }
 }
 
-void top2pstfx(TStack<char, 100>& stack,
-std::string& postfix) {
+void top2pstfx(TStack<char, 100>& stack, std::string& postfix) {
   if (!postfix.empty() && postfix.back() != ' ') {
     postfix += ' ';
   }
@@ -42,11 +41,11 @@ std::string infx2pstfx(const std::string& inf) {
         top2pstfx(stack, postfix);
       }
       if (!stack.isEmpty()) {
-        stack.pop();
+        stack.pop(); 
       }
     } else if (getPriority(ch) > 1) {
       while (!stack.isEmpty() &&
-        getPriority(stack.getTop()) >= getPriority(ch)) {
+             getPriority(stack.getTop()) >= getPriority(ch)) {
         top2pstfx(stack, postfix);
       }
       stack.push(ch);
@@ -62,32 +61,42 @@ std::string infx2pstfx(const std::string& inf) {
 int eval(const std::string& postfix) {
   std::stack<int> stack;
   std::string token;
+  
   for (char ch : postfix) {
     if (ch == ' ') {
       if (!token.empty()) {
         stack.push(std::stoi(token));
         token.clear();
       }
-      continue;
-    }
-    if (isdigit(ch)) {
+    } else if (isdigit(ch)) {
       token += ch;
     } else {
       if (!token.empty()) {
         stack.push(std::stoi(token));
         token.clear();
       }
-      int b = stack.top();
-      stack.pop();
-      int a = stack.top();
-      stack.pop();
+      int b = stack.top(); stack.pop();
+      int a = stack.top(); stack.pop();
       switch (ch) {
-        case '+': stack.push(a + b); break;
-        case '-': stack.push(a - b); break;
-        case '*': stack.push(a * b); break;
-        case '/': stack.push(a / b); break;
+        case '+':
+          stack.push(a + b);
+          break;
+        case '-':
+          stack.push(a - b);
+          break;
+        case '*':
+          stack.push(a * b);
+          break;
+        case '/':
+          stack.push(a / b);
+          break;
       }
     }
   }
+  
+  if (!token.empty()) {
+    stack.push(std::stoi(token));
+  }
+
   return stack.top();
 }
